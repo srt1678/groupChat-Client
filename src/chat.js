@@ -20,23 +20,14 @@ function Chat() {
 
 		// Listen for incoming messages
 		socket.on("message", (msg) => {
-      console.log('--------')
-      console.log(msg)
 			let msgObj = {
 				content: msg.content,
 				sender: msg.sender,
 				room: msg.room,
 				timestamp: new Date(),
 			};
-			console.log(msgObj);
 			setMessages((prev) => [...prev, msgObj]);
 		});
-
-    socket.on("messageSent", (data) => {
-      if(data.status === "success"){
-        console.log(`message sent to room ${data.room}: `, data.content);
-      }
-    })
 
 		// Listen for updated user list
 		socket.on("updateUsers", (userList) => {
@@ -53,6 +44,9 @@ function Chat() {
 			// Only disconnect if needed, not automatically
 			// socket.disconnect();
 			socket.off("message");
+			socket.off("updateUsers");
+			socket.off("connect");
+			socket.off("disconnect");
 		};
 	}, []);
 
@@ -74,10 +68,10 @@ function Chat() {
 		}
 	};
 
-  const handlePrivateRoomSelect = (user) => {
-    const roomName= [name, user].sort().join("-");
-    setCurrentChatRoom(roomName);
-  }
+	const handlePrivateRoomSelect = (user) => {
+		const roomName = [name, user].sort().join("-");
+		setCurrentChatRoom(roomName);
+	};
 
 	const formatTimestamp = (timestamp) => {
 		const hours = timestamp.getHours();
@@ -126,12 +120,12 @@ function Chat() {
 										<div
 											key={user}
 											className={
-												currentChatRoom === `${[user, name].sort().join('-')}`
+												currentChatRoom === `${[user, name].sort().join("-")}`
 													? "userContainerSelect"
 													: "userContainer"
 											}
 											onClick={() => {
-												handlePrivateRoomSelect(user)
+												handlePrivateRoomSelect(user);
 											}}
 										>
 											{user}
@@ -143,15 +137,18 @@ function Chat() {
 							<div className="messageDisplay">
 								{messages.map((msgObj, index) => {
 									const { content, sender, room, timestamp } = msgObj;
-                  
-                  let participants;
-                  let standardizedRoom;
-                  if(room && room !== "All"){
-                    participants = room.split('-').sort();
-                    standardizedRoom = `${participants[0]}-${participants[1]}`;
-                  }
 
-                  if(room === currentChatRoom || standardizedRoom === currentChatRoom){
+									let participants;
+									let standardizedRoom;
+									if (room && room !== "All") {
+										participants = room.split("-").sort();
+										standardizedRoom = `${participants[0]}-${participants[1]}`;
+									}
+
+									if (
+										room === currentChatRoom ||
+										standardizedRoom === currentChatRoom
+									) {
 										return (
 											<div
 												key={index}
@@ -163,6 +160,11 @@ function Chat() {
 														: "receivedMessage"
 												}
 											>
+												{room === "All" &&
+													sender !== "System" &&
+													sender !== name && (
+														<strong className="sender">{sender}: </strong>
+													)}
 												{content}
 												<span className="timestamp">
 													{formatTimestamp(timestamp)}
