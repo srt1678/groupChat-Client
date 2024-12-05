@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import "./chat.css";
 
+// Establish a connection to the server
 const socket = io("http://localhost:3000"); // Connect to the server
 
 function Chat() {
@@ -12,6 +13,7 @@ function Chat() {
 	const [users, setUsers] = useState([]);
 	const [currentChatRoom, setCurrentChatRoom] = useState("All");
 
+  // useEffect to handle socket events and cleanup
 	useEffect(() => {
 		// Log connection status for debugging
 		socket.on("connect", () => {
@@ -19,6 +21,7 @@ function Chat() {
 		});
 
 		// Listen for incoming messages
+    // This is triggered whenever a new message is broadcast by the server
 		socket.on("message", (msg) => {
 			let msgObj = {
 				content: msg.content,
@@ -26,15 +29,17 @@ function Chat() {
 				room: msg.room,
 				timestamp: new Date(),
 			};
+      // Append the new message to the existing list of messages
 			setMessages((prev) => [...prev, msgObj]);
 		});
 
-		// Listen for updated user list
+		// Listen for "updateUsers" events to get the current list of active users
+		// This is sent by the server whenever a user joins or leaves
 		socket.on("updateUsers", (userList) => {
 			setUsers(userList);
 		});
 
-		// Listen for disconnections from the server
+		// Listen for "disconnect" events, which indicate the client is no longer connected to the server
 		socket.on("disconnect", (reason) => {
 			console.log("Disconnected from server:", reason);
 		});
@@ -59,6 +64,7 @@ function Chat() {
 
 	const sendMessage = () => {
 		if (message.trim()) {
+      // Emit a "message" event to the server with message details
 			socket.emit("message", {
 				content: message,
 				sender: name,
@@ -68,6 +74,7 @@ function Chat() {
 		}
 	};
 
+  // Function to handle switching to a private chat room
 	const handlePrivateRoomSelect = (user) => {
 		const roomName = [name, user].sort().join("-");
 		setCurrentChatRoom(roomName);
